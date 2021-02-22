@@ -1,0 +1,5 @@
+package functions
+
+func LogRequest() {
+
+}
