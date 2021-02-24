@@ -27,6 +27,6 @@ func Connect() (*gorm.DB, error) {
 	return db, nil
 }
 
-func GetDB() *gorm.DB {
+func DB() *gorm.DB {
 	return db
 }

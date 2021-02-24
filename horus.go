@@ -13,7 +13,7 @@ import (
 
 func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := storage.Connect()
+		request, err := storage.Connect()
 
 		if err != nil {
 			_ = fmt.Errorf("%v", err)
@@ -31,7 +31,7 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			Time:          time.Now(),
 		}
 
-		write := storage.DB().Create(&req)
+		write := request.Create(&req)
 
 		fmt.Println(write)
 
