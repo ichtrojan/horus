@@ -2,14 +2,11 @@ package horus
 
 import (
 	"fmt"
-	"github.com/gorilla/handlers"
 	"github.com/ichtrojan/horus/models"
 	"github.com/ichtrojan/horus/storage"
-	"io"
 	"net/http"
 	"time"
 )
-
 
 func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -36,12 +33,6 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 		fmt.Println(write)
 
 		next(w, r)
-	}
-}
-
-func newLoggingHandler(dst io.Writer) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return handlers.LoggingHandler(dst, h)
 	}
 }
 
