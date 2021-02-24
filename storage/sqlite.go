@@ -6,27 +6,16 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-var db *gorm.DB
-var err error
-
 func Connect() (*gorm.DB, error) {
-
-	db, err = gorm.Open("sqlite3", "horus.db")
-	//db, err := gorm.Open(sqlite.Open("horus.db"), &gorm.Config{})
+	db, err := gorm.Open("sqlite3", "horus.db")
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&models.Request{}).Error
-
-	if err != nil {
+	if err := db.AutoMigrate(&models.Request{}).Error; err != nil {
 		return nil, err
 	}
 
 	return db, nil
-}
-
-func DB() *gorm.DB {
-	return db
 }

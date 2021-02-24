@@ -2,7 +2,6 @@ package models
 
 import (
 	"gorm.io/gorm"
-	"time"
 )
 
 type Request struct {
@@ -14,6 +13,5 @@ type Request struct {
 	Headers       string `gorm:"type:varchar(100);"`
 	Method        string `gorm:"type:varchar(10);"`
 	Host          string `gorm:"type:varchar(100);"`
-	Time 		  time.Time
-	Ipadress	  string `gorm:"type:varchar(100);"`
+	Ipadress      string `gorm:"type:varchar(100);"`
 }

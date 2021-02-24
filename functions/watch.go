@@ -1,5 +1,0 @@
-package functions
-
-func LogRequest() {
-
-}
