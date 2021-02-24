@@ -5,6 +5,7 @@ import (
 	"github.com/ichtrojan/horus/models"
 	"github.com/ichtrojan/horus/storage"
 	"log"
+	"net"
 	"net/http"
 )
 
@@ -16,6 +17,8 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			log.Fatal(err)
 		}
 
+		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+
 		req := models.Request{
 			ResponseBody:  "",
 			ResposeStatus: 200,
@@ -24,7 +27,7 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			Headers:       "",
 			Method:        r.Method,
 			Host:          r.Host,
-			Ipadress:      r.RemoteAddr,
+			Ipadress:      ip,
 		}
 
 		write := request.Create(&req)
