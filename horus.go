@@ -1,6 +1,7 @@
 package horus
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ichtrojan/horus/models"
 	"github.com/ichtrojan/horus/storage"
@@ -19,12 +20,18 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 
 		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 
+		header, err := json.Marshal(r.Header)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		req := models.Request{
 			ResponseBody:  "",
 			ResposeStatus: 200,
 			RequestBody:   "",
 			Path:          r.RequestURI,
-			Headers:       "",
+			Headers:       header,
 			Method:        r.Method,
 			Host:          r.Host,
 			Ipadress:      ip,
