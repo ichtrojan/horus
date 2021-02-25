@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ichtrojan/horus/models"
 	"github.com/ichtrojan/horus/storage"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -26,10 +27,16 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			log.Fatal(err)
 		}
 
+		requestBody, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		req := models.Request{
 			ResponseBody:  "",
 			ResposeStatus: 200,
-			RequestBody:   "",
+			RequestBody:   requestBody,
 			Path:          r.RequestURI,
 			Headers:       header,
 			Method:        r.Method,
