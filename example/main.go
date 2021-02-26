@@ -9,7 +9,7 @@ import (
 )
 
 type response struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func main() {
