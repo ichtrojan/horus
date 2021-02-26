@@ -58,6 +58,8 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.Respo
 		if write.RowsAffected != 1 {
 			log.Fatal("unable to log request")
 		}
+
+		next(writer, request)
 	}
 }
 
