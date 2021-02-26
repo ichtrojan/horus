@@ -14,5 +14,5 @@ type Request struct {
 	Method        string `gorm:"type:varchar(10);"`
 	Host          string `gorm:"type:varchar(100);"`
 	Ipadress      string `gorm:"type:varchar(100);"`
-	TimeSpent	  string `gorm:"type:varchar(100);"` //or duration
+	TimeSpent	  string `gorm:"type:varchar(100);"`
 }
