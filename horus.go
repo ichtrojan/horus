@@ -48,7 +48,7 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			Method:        r.Method,
 			Host:          r.Host,
 			Ipadress:      ip,
-			TimeSpent:     time.Since(startTime).String(),
+			TimeSpent:     float64(time.Since(startTime)) / float64(time.Millisecond),
 		}
 
 		write := request.Create(&req)
@@ -73,12 +73,14 @@ func Serve(port string) error {
 		request.First(&req)
 
 	})
+
 	go func() error {
 		if err := http.ListenAndServe(port, nil); err != nil {
 			return err
 		}
 		return nil
 	}()
+
 	fmt.Println("Started horus:views server on port"+port)
 
 	return nil
