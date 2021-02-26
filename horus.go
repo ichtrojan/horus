@@ -9,6 +9,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"time"
 )
 
 func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWriter, r *http.Request) {
@@ -33,15 +35,20 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			log.Fatal(err)
 		}
 
+		c := httptest.NewRecorder()
+		startTime := time.Now()
+		next(c, r)
+
 		req := models.Request{
-			ResponseBody:  "",
-			ResposeStatus: 200,
+			ResponseBody:  c.Body.String(),
+			ResposeStatus: c.Code,
 			RequestBody:   requestBody,
 			Path:          r.RequestURI,
 			Headers:       header,
 			Method:        r.Method,
 			Host:          r.Host,
 			Ipadress:      ip,
+			TimeSpent:     float64(time.Since(startTime)) / float64(time.Millisecond),
 		}
 
 		write := request.Create(&req)
@@ -50,7 +57,6 @@ func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWr
 			log.Fatal("unable to log request")
 		}
 
-		next(w, r)
 	}
 }
 
@@ -65,11 +71,17 @@ func Serve(port string) error {
 		}
 
 		request.First(&req)
+
 	})
 
-	if err := http.ListenAndServe(port, nil); err != nil {
-		return err
-	}
+	go func() error {
+		if err := http.ListenAndServe(port, nil); err != nil {
+			return err
+		}
+		return nil
+	}()
+
+	fmt.Println("Started horus:views server on port"+port)
 
 	return nil
 }
