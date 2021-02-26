@@ -13,50 +13,51 @@ import (
 	"time"
 )
 
-func Watch(next func(http.ResponseWriter, *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		request, err := storage.Connect()
+func Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		database, err := storage.Connect()
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+		ipAddress, _, _ := net.SplitHostPort(request.RemoteAddr)
 
-		header, err := json.Marshal(r.Header)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		requestBody, err := ioutil.ReadAll(r.Body)
+		headers, err := json.Marshal(request.Header)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		c := httptest.NewRecorder()
+		requestBody, err := ioutil.ReadAll(request.Body)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		recorder := httptest.NewRecorder()
+
 		startTime := time.Now()
-		next(c, r)
+
+		next(recorder, request)
 
 		req := models.Request{
-			ResponseBody:  c.Body.String(),
-			ResposeStatus: c.Code,
+			ResponseBody:  recorder.Body.String(),
+			ResposeStatus: recorder.Code,
 			RequestBody:   requestBody,
-			Path:          r.RequestURI,
-			Headers:       header,
-			Method:        r.Method,
-			Host:          r.Host,
-			Ipadress:      ip,
+			Path:          request.RequestURI,
+			Headers:       headers,
+			Method:        request.Method,
+			Host:          request.Host,
+			Ipadress:      ipAddress,
 			TimeSpent:     float64(time.Since(startTime)) / float64(time.Millisecond),
 		}
 
-		write := request.Create(&req)
+		write := database.Create(&req)
 
 		if write.RowsAffected != 1 {
 			log.Fatal("unable to log request")
 		}
-
 	}
 }
 
@@ -81,7 +82,7 @@ func Serve(port string) error {
 		return nil
 	}()
 
-	fmt.Println("Started horus:views server on port"+port)
+	fmt.Println("Started horus:views server on port" + port)
 
 	return nil
 }
