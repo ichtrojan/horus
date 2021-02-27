@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ichtrojan/horus"
-	_ "github.com/ichtrojan/horus"
 	"net/http"
 )
 
