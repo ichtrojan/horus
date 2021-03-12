@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ichtrojan/horus"
+	"log"
 	"net/http"
 )
 
@@ -12,7 +13,13 @@ type response struct {
 }
 
 func main() {
-	http.HandleFunc("/", horus.Watch(func(w http.ResponseWriter, r *http.Request) {
+	listener, err := horus.Init("mysql")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		_ = json.NewEncoder(w).Encode(response{Message: "Horus is live 👁"})
