@@ -1,6 +1,7 @@
 package horus
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -102,14 +103,12 @@ func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(w
 
 		next(recorder, request)
 
-		fmt.Println(recorder.Body.String())
-
 		req := models.Request{
-			ResponseBody:  recorder.Body.String(),
+			ResponseBody:  string(minifyJson(recorder.Body.Bytes())),
 			ResposeStatus: recorder.Code,
-			RequestBody:   string(requestBody),
+			RequestBody:   string(minifyJson(requestBody)),
 			Path:          request.RequestURI,
-			Headers:       string(headers),
+			Headers:       string(minifyJson(headers)),
 			Method:        request.Method,
 			Host:          request.Host,
 			Ipadress:      ipAddress,
@@ -124,6 +123,16 @@ func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(w
 
 		next(writer, request)
 	}
+}
+
+func minifyJson(originalJson []byte) []byte {
+	buffer := new(bytes.Buffer)
+
+	if err := json.Compact(buffer, originalJson); err != nil {
+		fmt.Println(err)
+	}
+
+	return []byte(buffer.String())
 }
 
 func (config Config) Serve(port string) error {
