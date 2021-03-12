@@ -6,11 +6,11 @@ import (
 
 type Request struct {
 	gorm.Model
-	ResponseBody  string  `gorm:"type:varchar(1000);"`
+	ResponseBody  string  `gorm:"type:varchar(10000);"`
 	ResposeStatus int     `gorm:"type:integer;"`
-	RequestBody   string  `gorm:"type:varchar(1000);"`
-	Path          string  `gorm:"type:varchar(100);"`
-	Headers       string  `gorm:"type:varchar(1000);"`
+	RequestBody   string  `gorm:"type:varchar(10000);"`
+	Path          string  `gorm:"type:varchar(1000);"`
+	Headers       string  `gorm:"type:varchar(10000);"`
 	Method        string  `gorm:"type:varchar(10);"`
 	Host          string  `gorm:"type:varchar(100);"`
 	Ipadress      string  `gorm:"type:varchar(100);"`
