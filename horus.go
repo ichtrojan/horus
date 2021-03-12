@@ -56,7 +56,7 @@ func Init(database string) (Config, error) {
 	port, exist := os.LookupEnv("HORUS_DB_PORT")
 
 	if !exist {
-		log.Fatal("HORUS_DB_NAME not set in .env")
+		log.Fatal("HORUS_DB_PORT not set in .env")
 	}
 
 	switch database {
