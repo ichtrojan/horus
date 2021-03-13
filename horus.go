@@ -128,6 +128,10 @@ func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(w
 func minifyJson(originalJson []byte) []byte {
 	buffer := new(bytes.Buffer)
 
+	if len(originalJson) == 0 {
+		return []byte("[]")
+	}
+
 	if err := json.Compact(buffer, originalJson); err != nil {
 		fmt.Println(err)
 	}
