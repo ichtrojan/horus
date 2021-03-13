@@ -24,55 +24,36 @@ type Config struct {
 	Dsn      string
 }
 
-func Init(database string) (Config, error) {
+// Options is a configuration container to setup the Horus middleware.
+type Options struct {
+	Views    bool
+	Port 	 string
+	Database string
+}
+
+
+func Init(options Options) (Config, error) {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("No .env file found")
 	}
+	config, err := options.database()
 
-	user, exist := os.LookupEnv("HORUS_DB_USER")
-
-	if !exist {
-		log.Fatal("HORUS_DB_USER not set in .env")
+	if err != nil{
+		log.Fatalln("Something went wrong with database config")
 	}
 
-	pass, exist := os.LookupEnv("HORUS_DB_PASS")
-
-	if !exist {
-		log.Fatal("HORUS_DB_PASS not set in .env")
+	if options.Views{
+		if options.Port == ""{
+			fmt.Println("No port specified, starting at port 8100")
+		}
+		config.Serve(":8100")
 	}
+	return config, nil
+}
 
-	host, exist := os.LookupEnv("HORUS_DB_HOST")
-
-	if !exist {
-		log.Fatal("HORUS_DB_HOST not set in .env")
-	}
-
-	name, exist := os.LookupEnv("HORUS_DB_NAME")
-
-	if !exist {
-		log.Fatal("HORUS_DB_NAME not set in .env")
-	}
-
-	port, exist := os.LookupEnv("HORUS_DB_PORT")
-
-	if !exist {
-		log.Fatal("HORUS_DB_PORT not set in .env")
-	}
-
-	switch database {
-	case "mysql":
-		return Config{
-			Database: "mysql",
-			Dsn:      fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name),
-		}, nil
-	case "postgres":
-		return Config{
-			Database: "mysql",
-			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
-		}, nil
-	default:
-		return Config{}, errors.New("database not defined")
-	}
+// Default creates a new Horus handler with default options.
+func Default() (Config, error) {
+	return Init(Options{Database: "mysql", Views: true})
 }
 
 func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
@@ -136,7 +117,8 @@ func minifyJson(originalJson []byte) []byte {
 }
 
 func (config Config) Serve(port string) error {
-	http.HandleFunc("/horus", func(w http.ResponseWriter, r *http.Request) {
+	horuServer := http.NewServeMux()
+	horuServer.HandleFunc("/horus", func(w http.ResponseWriter, r *http.Request) {
 		var req models.Request
 
 		request, err := connect(config)
@@ -147,16 +129,19 @@ func (config Config) Serve(port string) error {
 
 		request.First(&req)
 
+		//proceed to show view
+		fmt.Println(req)
+
 	})
 
 	go func() error {
-		if err := http.ListenAndServe(port, nil); err != nil {
+		if err := http.ListenAndServe(port, horuServer); err != nil {
 			return err
 		}
 		return nil
 	}()
 
-	fmt.Println("Started horus:views server on port" + port)
+	fmt.Println("Started horus:views server on port ", port)
 
 	return nil
 }
@@ -174,3 +159,51 @@ func connect(config Config) (*gorm.DB, error) {
 
 	return db, nil
 }
+
+func(options Options) database() (Config, error){
+
+	user, exist := os.LookupEnv("HORUS_DB_USER")
+
+	if !exist {
+		log.Fatal("HORUS_DB_USER not set in .env")
+	}
+
+	pass, exist := os.LookupEnv("HORUS_DB_PASS")
+
+	if !exist {
+		log.Fatal("HORUS_DB_PASS not set in .env")
+	}
+
+	host, exist := os.LookupEnv("HORUS_DB_HOST")
+
+	if !exist {
+		log.Fatal("HORUS_DB_HOST not set in .env")
+	}
+
+	name, exist := os.LookupEnv("HORUS_DB_NAME")
+
+	if !exist {
+		log.Fatal("HORUS_DB_NAME not set in .env")
+	}
+
+	port, exist := os.LookupEnv("HORUS_DB_PORT")
+
+	if !exist {
+		log.Fatal("HORUS_DB_PORT not set in .env")
+	}
+	switch options.Database {
+	case "mysql":
+		return Config{
+			Database: "mysql",
+			Dsn:      fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name),
+		}, nil
+	case "postgres":
+		return Config{
+			Database: "mysql",
+			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
+		}, nil
+	default:
+		return Config{}, errors.New("database not defined")
+	}
+}
+

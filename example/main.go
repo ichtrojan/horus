@@ -13,7 +13,8 @@ type response struct {
 }
 
 func main() {
-	listener, err := horus.Init("mysql")
+	//listener, err := horus.Init(horus.Options{Database: "mysql", Views: true, Port : "8100"})
+	listener, err := horus.Default()
 
 	if err != nil {
 		log.Fatal(err)
