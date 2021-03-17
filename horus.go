@@ -140,7 +140,8 @@ func minifyJson(originalJson []byte) []byte {
 }
 
 func (config Config) Serve(port string) error {
-	http.HandleFunc("/horus", func(w http.ResponseWriter, r *http.Request) {
+	horuServer := http.NewServeMux()
+	horuServer.HandleFunc("/horus", func(w http.ResponseWriter, r *http.Request) {
 		var req models.Request
 
 		request, err := connect(config)
@@ -153,11 +154,8 @@ func (config Config) Serve(port string) error {
 
 	})
 
-	go func() error {
-		if err := http.ListenAndServe(port, nil); err != nil {
-			return err
-		}
-		return nil
+	go func()  {
+		log.Fatal(http.ListenAndServe(port, horuServer))
 	}()
 
 	fmt.Println("Started horus:views server on port" + port)

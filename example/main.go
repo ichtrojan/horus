@@ -18,6 +18,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err = listener.Serve(":8080"); err != nil{
+		log.Fatal(err)
+	}
+
 
 	http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
