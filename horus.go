@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/ichtrojan/horus/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -22,7 +23,23 @@ import (
 type Config struct {
 	Database string
 	Dsn      string
+	key 	 string
 }
+
+const (
+	writeWait = 10 * time.Second
+	pongWait = 60 * time.Second
+	pingPeriod = (pongWait * 9) / 10
+	filePeriod = 1 * time.Second
+)
+
+var (
+	upgrader     = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	 requestQueue = make(chan models.Request)
+)
 
 func Init(database string) (Config, error) {
 	if err := godotenv.Load(); err != nil {
@@ -120,6 +137,9 @@ func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(w
 		if write.RowsAffected != 1 {
 			log.Fatal("unable to log request")
 		}
+		go func() {
+			requestQueue <- req
+		}()
 
 		next(writer, request)
 	}
@@ -139,26 +159,23 @@ func minifyJson(originalJson []byte) []byte {
 	return []byte(buffer.String())
 }
 
-func (config Config) Serve(port string) error {
+func (config Config) Serve(port string, key string) error {
+
+	config.key = key
 	horuServer := http.NewServeMux()
-	horuServer.HandleFunc("/horus", func(w http.ResponseWriter, r *http.Request) {
-		var req models.Request
 
-		request, err := connect(config)
-
-		if err != nil {
-			_ = fmt.Errorf("%v", err)
-		}
-
-		request.First(&req)
-
-	})
+	fs := http.FileServer(http.Dir("../views/public/"))
+	horuServer.HandleFunc("/horus", renderView)
+	horuServer.HandleFunc("/auth",config.checkAuth)
+	horuServer.HandleFunc("/logs",config.showLogs)
+	horuServer.Handle("/public/", http.StripPrefix( "/public", fs ))
+	horuServer.HandleFunc("/ws",config.serveWs)
 
 	go func()  {
 		log.Fatal(http.ListenAndServe(port, horuServer))
 	}()
 
-	fmt.Println("Started horus:views server on port" + port)
+	fmt.Println("Started horus:views server on " + port+ "/horus")
 
 	return nil
 }
@@ -175,4 +192,146 @@ func connect(config Config) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func (config Config) checkAuth(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != "POST"{
+
+		response := map[string]string{"status": "failed"}
+
+		_ = json.NewEncoder(w).Encode(&response)
+
+		return
+	}
+	err := r.Header["Key"][0]
+
+	if err == config.key {
+		response := map[string]string{"status": "success"}
+
+		_ = json.NewEncoder(w).Encode(&response)
+
+		return
+
+	} else {
+		response := map[string]string{"status": "failed"}
+
+		_ = json.NewEncoder(w).Encode(&response)
+
+		return
+	}
+}
+
+func (config Config) showLogs(w http.ResponseWriter, r *http.Request){
+
+	lastID := r.URL.Query().Get("lastID")
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	var req []models.Request
+
+	request, err := connect(config)
+
+	if err != nil {
+		_ = fmt.Errorf("%v", err)
+	}
+
+	if lastID == "0"{
+		request.Limit(20).Order("id desc").Find(&req)
+	}else{
+		request.Limit(20).Order("id desc").Where("id < ?",lastID ).Find(&req)
+	}
+
+	_ = json.NewEncoder(w).Encode(&req)
+
+	return
+}
+
+func renderView(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "../views/index.html")
+}
+
+func (config Config) serveWs(w http.ResponseWriter, r *http.Request){
+	ws, err := upgrader.Upgrade(w, r, nil)
+
+	if err != nil {
+		if _, ok := err.(websocket.HandshakeError); !ok {
+			log.Println(err)
+		}
+		return
+	}
+
+	go writer(ws)
+	reader(ws)
+}
+
+func reader(ws *websocket.Conn) {
+	defer ws.Close()
+
+	ws.SetReadLimit(512)
+
+	_ = ws.SetReadDeadline(time.Now().Add(pongWait))
+
+	ws.SetPongHandler(func(string) error {
+		_ = ws.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	for {
+		_, _, err := ws.ReadMessage()
+
+		if err != nil {
+			break
+		}
+	}
+}
+
+func writer(ws *websocket.Conn) {
+	pingTicker := time.NewTicker(pingPeriod)
+
+	defer func() {
+		pingTicker.Stop()
+		_ = ws.Close()
+	}()
+
+	for {
+		select {
+		case logs, ok := <-requestQueue:
+
+			reqBodyBytes := new(bytes.Buffer)
+			json.NewEncoder(reqBodyBytes).Encode(logs)
+			logsPush := reqBodyBytes.Bytes()
+
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+
+			if !ok{
+				ws.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := ws.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+
+			w.Write(logsPush)
+
+			n := len(requestQueue)
+			for i := 0; i < n; i++ {
+				json.NewEncoder(reqBodyBytes).Encode(requestQueue)
+				w.Write(reqBodyBytes.Bytes())
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+
+		case <-pingTicker.C:
+			_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
+
+			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return
+			}
+		}
+	}
 }
