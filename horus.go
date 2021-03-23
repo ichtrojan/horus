@@ -12,7 +12,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
@@ -55,8 +54,6 @@ type Response struct {
 type Credentials struct {
 	Key string
 }
-
-var tmpl = template.Must(template.ParseFiles("../views/auth.gohtml"))
 
 func Init(database string) (Config, error) {
 	if err := godotenv.Load(); err != nil {
@@ -193,8 +190,6 @@ func (config Config) Serve(port string, key string) error {
 
 	horusServer.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
-			login(w, r)
 		case "POST":
 			config.postlogin(w, r)
 		}
@@ -210,7 +205,11 @@ func (config Config) Serve(port string, key string) error {
 
 		http.SetCookie(w, cookie)
 
-		http.Redirect(w, r, "login", 302)
+		response := map[string]bool{"status": true}
+
+		_ = json.NewEncoder(w).Encode(response)
+
+		return
 	})
 
 	var err error
@@ -227,6 +226,7 @@ func (config Config) Serve(port string, key string) error {
 }
 
 func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
+
 	creds := Credentials{
 		Key: r.FormValue("key"),
 	}
@@ -234,18 +234,19 @@ func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
 	if creds.Key == config.key {
 		setSession(w, "god")
 
-		http.Redirect(w, r, "horus", 302)
+		response := map[string]bool{"status": true}
+
+		_ = json.NewEncoder(w).Encode(response)
 
 		return
 	}
 
-	w.WriteHeader(http.StatusUnauthorized)
+	response := map[string]bool{"status": false}
 
-	_ = tmpl.Execute(w, Response{Message: "invalid key"})
-}
+	_ = json.NewEncoder(w).Encode(response)
 
-func login(w http.ResponseWriter, r *http.Request) {
-	_ = tmpl.Execute(w, nil)
+	return
+
 }
 
 func setSession(w http.ResponseWriter, who string) {
@@ -274,9 +275,6 @@ func getSession(w http.ResponseWriter, r *http.Request) (who string) {
 			return who
 		}
 	}
-
-	http.Redirect(w, r, "login", 302)
-
 	return
 }
 
@@ -301,6 +299,13 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 
 	var req []models.Request
 
+	session := getSession(w, r)
+
+	if session == ""{
+		_ = json.NewEncoder(w).Encode(&req)
+		return
+	}
+
 	request, err := connect(config)
 
 	if err != nil {
@@ -319,12 +324,23 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderView(w http.ResponseWriter, r *http.Request) {
-	_ = getSession(w, r)
 
 	http.ServeFile(w, r, "../views/index.html")
 }
 
 func (config Config) serveWs(w http.ResponseWriter, r *http.Request) {
+
+	session := getSession(w, r)
+
+	if session == ""{
+
+		response := map[string]string{"status": "Invalid session"}
+
+		_ = json.NewEncoder(w).Encode(response)
+
+		return
+	}
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {

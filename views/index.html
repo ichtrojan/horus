@@ -22,20 +22,44 @@
 
 <body class="antialiased font-sans bg-gray-200">
     <div class="container mx-auto px-4 sm:px-8">
-        <div class="py-8">
-            <div>
-                <h2 class="text-2xl font-semibold leading-tight">Horus 𓂀</h2>
-            </div>
-        </div>
         <div id="app">
-            <sort-bar></sort-bar>
-            <horus></horus>
+            <div class="py-8">
+                <div>
+                    <h2 class="text-2xl font-semibold leading-tight">Horus 𓂀</h2>
+                </div>
+                <div v-if="loggedIn" class="float-right">
+                    <a aria-hidden
+                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" v-on:click="logout()">Logout</a>
+                </div>
+            </div>
+            <div v-if="loggedIn">
+                <sort-bar></sort-bar>
+                <horus :logged="this.cookie"></horus>
+            </div>
+            <div v-else>
+                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
+                    <div class="md:w-full px-3">
+                        <div class="md:w-1/2 px-3 mb-6 md:mb-0">
+                            <p class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert" v-if="error">Wrong Credentials passed <br/></p><br/>
+                            <label class="block uppercase tracking-wide text-grey-darker text-xs font-bold mb-2" for="grid-first-name">
+                                Horus Key
+                            </label>
+                            <input v-model="key" class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3" id="grid-first-name" type="password" placeholder="******">
+                            <p class="text-red text-xs italic">Please enter key to access logs.</p>
+
+                            <button v-on:click="login" class="bg-red-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Login 𓂀</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>
 
 <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
 <script src="https://unpkg.com/http-vue-loader"></script>
+<script src="https://unpkg.com/vue-cookies@1.7.4/vue-cookies.js"></script>
 <script src="public/js/index.js"></script>
 
 </body>
