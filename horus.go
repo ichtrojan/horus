@@ -188,13 +188,6 @@ func (config Config) Serve(port string, key string) error {
 
 	horusServer.HandleFunc("/ws", config.serveWs)
 
-	horusServer.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "POST":
-			config.postlogin(w, r)
-		}
-	})
-
 	horusServer.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		cookie := &http.Cookie{
 			Name:   "horus",
@@ -205,11 +198,7 @@ func (config Config) Serve(port string, key string) error {
 
 		http.SetCookie(w, cookie)
 
-		response := map[string]bool{"status": true}
-
-		_ = json.NewEncoder(w).Encode(response)
-
-		return
+		http.Redirect(w, r, "horus", 302)
 	})
 
 	var err error
@@ -226,7 +215,6 @@ func (config Config) Serve(port string, key string) error {
 }
 
 func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
-
 	creds := Credentials{
 		Key: r.FormValue("key"),
 	}
@@ -301,7 +289,7 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 
 	session := getSession(w, r)
 
-	if session == ""{
+	if session == "" {
 		_ = json.NewEncoder(w).Encode(&req)
 		return
 	}
@@ -332,7 +320,7 @@ func (config Config) serveWs(w http.ResponseWriter, r *http.Request) {
 
 	session := getSession(w, r)
 
-	if session == ""{
+	if session == "" {
 
 		response := map[string]string{"status": "Invalid session"}
 
