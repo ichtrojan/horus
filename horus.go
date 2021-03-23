@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/websocket"
 	"github.com/ichtrojan/horus/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
@@ -23,23 +25,38 @@ import (
 type Config struct {
 	Database string
 	Dsn      string
-	key 	 string
+	key      string
 }
 
 const (
-	writeWait = 10 * time.Second
-	pongWait = 60 * time.Second
+	writeWait  = 10 * time.Second
+	pongWait   = 60 * time.Second
 	pingPeriod = (pongWait * 9) / 10
 	filePeriod = 1 * time.Second
 )
 
 var (
-	upgrader     = websocket.Upgrader{
+	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	 requestQueue = make(chan models.Request)
+
+	requestQueue = make(chan models.Request)
 )
+
+var cookieHandler = securecookie.New(
+	securecookie.GenerateRandomKey(64),
+	securecookie.GenerateRandomKey(32))
+
+type Response struct {
+	Message string
+}
+
+type Credentials struct {
+	Key string
+}
+
+var tmpl = template.Must(template.ParseFiles("../views/auth.gohtml"))
 
 func Init(database string) (Config, error) {
 	if err := godotenv.Load(); err != nil {
@@ -160,24 +177,107 @@ func minifyJson(originalJson []byte) []byte {
 }
 
 func (config Config) Serve(port string, key string) error {
-
 	config.key = key
-	horuServer := http.NewServeMux()
 
-	fs := http.FileServer(http.Dir("../views/public/"))
-	horuServer.HandleFunc("/horus", renderView)
-	horuServer.HandleFunc("/auth",config.checkAuth)
-	horuServer.HandleFunc("/logs",config.showLogs)
-	horuServer.Handle("/public/", http.StripPrefix( "/public", fs ))
-	horuServer.HandleFunc("/ws",config.serveWs)
+	horusServer := http.NewServeMux()
 
-	go func()  {
-		log.Fatal(http.ListenAndServe(port, horuServer))
+	fileServer := http.FileServer(http.Dir("../views/public/"))
+
+	horusServer.Handle("/public/", http.StripPrefix("/public", fileServer))
+
+	horusServer.HandleFunc("/horus", renderView)
+
+	horusServer.HandleFunc("/logs", config.showLogs)
+
+	horusServer.HandleFunc("/ws", config.serveWs)
+
+	horusServer.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			login(w, r)
+		case "POST":
+			config.postlogin(w, r)
+		}
+	})
+
+	horusServer.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		cookie := &http.Cookie{
+			Name:   "horus",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		}
+
+		http.SetCookie(w, cookie)
+
+		http.Redirect(w, r, "login", 302)
+	})
+
+	var err error
+
+	go func() {
+		err = http.ListenAndServe(port, horusServer)
 	}()
 
-	fmt.Println("Started horus:views server on " + port+ "/horus")
+	if err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
+	creds := Credentials{
+		Key: r.FormValue("key"),
+	}
+
+	if creds.Key == config.key {
+		setSession(w, "god")
+
+		http.Redirect(w, r, "horus", 302)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusUnauthorized)
+
+	_ = tmpl.Execute(w, Response{Message: "invalid key"})
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	_ = tmpl.Execute(w, nil)
+}
+
+func setSession(w http.ResponseWriter, who string) {
+	value := map[string]string{
+		"who": who,
+	}
+
+	if encoded, err := cookieHandler.Encode("horus", value); err == nil {
+		cookie := &http.Cookie{
+			Name:   "horus",
+			Value:  encoded,
+			Path:   "/",
+			MaxAge: 3600,
+		}
+
+		http.SetCookie(w, cookie)
+	}
+}
+
+func getSession(w http.ResponseWriter, r *http.Request) (who string) {
+	if cookie, err := r.Cookie("horus"); err == nil {
+		cookieValue := make(map[string]string)
+
+		if err = cookieHandler.Decode("horus", cookie.Value, &cookieValue); err == nil {
+			who = cookieValue["who"]
+			return who
+		}
+	}
+
+	http.Redirect(w, r, "login", 302)
+
+	return
 }
 
 func connect(config Config) (*gorm.DB, error) {
@@ -194,36 +294,7 @@ func connect(config Config) (*gorm.DB, error) {
 	return db, nil
 }
 
-func (config Config) checkAuth(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != "POST"{
-
-		response := map[string]string{"status": "failed"}
-
-		_ = json.NewEncoder(w).Encode(&response)
-
-		return
-	}
-	err := r.Header["Key"][0]
-
-	if err == config.key {
-		response := map[string]string{"status": "success"}
-
-		_ = json.NewEncoder(w).Encode(&response)
-
-		return
-
-	} else {
-		response := map[string]string{"status": "failed"}
-
-		_ = json.NewEncoder(w).Encode(&response)
-
-		return
-	}
-}
-
-func (config Config) showLogs(w http.ResponseWriter, r *http.Request){
-
+func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 	lastID := r.URL.Query().Get("lastID")
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -236,10 +307,10 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request){
 		_ = fmt.Errorf("%v", err)
 	}
 
-	if lastID == "0"{
+	if lastID == "0" {
 		request.Limit(20).Order("id desc").Find(&req)
-	}else{
-		request.Limit(20).Order("id desc").Where("id < ?",lastID ).Find(&req)
+	} else {
+		request.Limit(20).Order("id desc").Where("id < ?", lastID).Find(&req)
 	}
 
 	_ = json.NewEncoder(w).Encode(&req)
@@ -248,10 +319,12 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request){
 }
 
 func renderView(w http.ResponseWriter, r *http.Request) {
+	_ = getSession(w, r)
+
 	http.ServeFile(w, r, "../views/index.html")
 }
 
-func (config Config) serveWs(w http.ResponseWriter, r *http.Request){
+func (config Config) serveWs(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
@@ -262,6 +335,7 @@ func (config Config) serveWs(w http.ResponseWriter, r *http.Request){
 	}
 
 	go writer(ws)
+
 	reader(ws)
 }
 
@@ -299,27 +373,31 @@ func writer(ws *websocket.Conn) {
 		case logs, ok := <-requestQueue:
 
 			reqBodyBytes := new(bytes.Buffer)
-			json.NewEncoder(reqBodyBytes).Encode(logs)
+
+			_ = json.NewEncoder(reqBodyBytes).Encode(logs)
+
 			logsPush := reqBodyBytes.Bytes()
 
-			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = ws.SetWriteDeadline(time.Now().Add(writeWait))
 
-			if !ok{
-				ws.WriteMessage(websocket.CloseMessage, []byte{})
+			if !ok {
+				_ = ws.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
 			w, err := ws.NextWriter(websocket.TextMessage)
+
 			if err != nil {
 				return
 			}
 
-			w.Write(logsPush)
+			_, _ = w.Write(logsPush)
 
 			n := len(requestQueue)
+
 			for i := 0; i < n; i++ {
-				json.NewEncoder(reqBodyBytes).Encode(requestQueue)
-				w.Write(reqBodyBytes.Bytes())
+				_ = json.NewEncoder(reqBodyBytes).Encode(requestQueue)
+				_, _ = w.Write(reqBodyBytes.Bytes())
 			}
 
 			if err := w.Close(); err != nil {

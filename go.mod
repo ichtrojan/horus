@@ -3,6 +3,7 @@ module github.com/ichtrojan/horus
 go 1.15
 
 require (
+	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.3.0
