@@ -205,7 +205,11 @@ func (config Config) Serve(port string, key string) error {
 
 		http.SetCookie(w, cookie)
 
-		http.Redirect(w, r, "login", 302)
+		response := map[string]bool{"status": true}
+
+		_ = json.NewEncoder(w).Encode(response)
+
+		return
 	})
 
 	var err error

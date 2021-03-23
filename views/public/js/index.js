@@ -34,6 +34,15 @@ new Vue({
         logout(){
             this.$cookies.remove('horus')
             this.loggedIn = false
+            fetch("./logout",)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status){
+                        console.log("Logged out")
+                    }else{
+                        console.log("Error")
+                    }
+                });
         }
     },
     created(){

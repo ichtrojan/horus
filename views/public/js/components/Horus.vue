@@ -99,6 +99,7 @@ module.exports = {
       showLog: false,
       selectedLog: {},
       logs: [],
+      connection: null,
       status: 'disconnected'
     };
   },
@@ -107,7 +108,6 @@ module.exports = {
     "log-info": httpVueLoader("public/js/components/LogInfo.vue"),
   },
   mounted() {
-    console.log("Hello World");
     this.initiate()
     this.scroll();
   },
@@ -117,17 +117,17 @@ module.exports = {
           .then((response) => response.json())
           .then((data) => (this.logs = data));
 
-      const connection = new WebSocket("ws://" + document.location.host + "/ws");
+      this.connection = new WebSocket("ws://" + document.location.host + "/ws");
 
-      connection.onclose = () => {
+      this.connection.onclose = () => {
         this.status = "disconnected"
       }
 
-      connection.onopen = () => {
+      this.connection.onopen = () => {
         this.status = "connected"
       }
 
-      connection.onmessage = (evt) => {
+      this.connection.onmessage = (evt) => {
         const js = JSON.parse(evt.data);
         this.logs.unshift(js)
       }
