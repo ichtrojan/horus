@@ -111,6 +111,16 @@ module.exports = {
     this.initiate()
     this.scroll();
   },
+  props: ["logged"],
+  watch: {
+      logged:{
+            handler: function (newVal, oldVal) {
+                if (newVal == "0"){
+                     this.connection.close()
+                }
+            }
+      }
+  },
   methods: {
     initiate() {
       fetch("./logs?lastID=0")

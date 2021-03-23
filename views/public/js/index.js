@@ -10,6 +10,7 @@ new Vue({
     data: {
         loggedIn : false,
         key : "",
+        cookie: "",
         error: false
     },
     methods: {
@@ -26,23 +27,25 @@ new Vue({
                     if (data.status){
                         this.$cookies.set(this.$cookies.get('horus'))
                         this.loggedIn = true
+                        this.cookie = "1"
                     }else{
                         this.error = true
                     }
                 });
         },
         logout(){
+            this.cookie = "0"
             this.$cookies.remove('horus')
-            this.loggedIn = false
             fetch("./logout",)
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.status){
-                        console.log("Logged out")
-                    }else{
-                        console.log("Error")
-                    }
-                });
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status){
+                    console.log("Logged out")
+                    this.loggedIn = false
+                }else{
+                    console.log("Error")
+                }
+            });
         }
     },
     created(){
