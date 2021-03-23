@@ -12,7 +12,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
@@ -55,8 +54,6 @@ type Response struct {
 type Credentials struct {
 	Key string
 }
-
-var tmpl = template.Must(template.ParseFiles("../views/auth.gohtml"))
 
 func Init(database string) (Config, error) {
 	if err := godotenv.Load(); err != nil {
@@ -193,8 +190,6 @@ func (config Config) Serve(port string, key string) error {
 
 	horusServer.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
-			login(w, r)
 		case "POST":
 			config.postlogin(w, r)
 		}
@@ -248,10 +243,6 @@ func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
 
 	return
 
-}
-
-func login(w http.ResponseWriter, r *http.Request) {
-	_ = tmpl.Execute(w, nil)
 }
 
 func setSession(w http.ResponseWriter, who string) {
