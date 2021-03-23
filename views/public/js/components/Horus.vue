@@ -132,11 +132,10 @@ module.exports = {
         this.logs.unshift(js)
       }
     },
-    toggleModal: (id) => {
+    toggleModal(id) {
       this.selectedLog = this.logs.find(obj => {
         return obj.ID === id
       });
-
       this.showLog = !this.showLog;
     },
     scroll() {
