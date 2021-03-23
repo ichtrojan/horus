@@ -30,22 +30,24 @@
             <table class="min-w-full divide-y divide-gray-200">
               <tbody class="bg-white divide-y divide-gray-200">
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap">Host : {{ info.host }}</td>
+                <td class="px-6 py-1 whitespace-nowrap">Host : {{ info.host }}</td>
               </tr>
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap">Method : {{ info.method }}</td>
+                <td class="px-6 py-1 whitespace-nowrap">Method : {{ info.method }}</td>
               </tr>
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap">Status : {{ info.code }}</td>
+                <td class="px-6 py-1 whitespace-nowrap">Status : {{ info.code }}</td>
               </tr>
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap">Path : {{ info.path }}</td>
+                <td class="px-6 py-1 whitespace-nowrap">Path : {{ info.path }}</td>
               </tr>
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap">Time Spent : {{ info.timespent }} ms</td>
+                <td class="px-6 py-1 whitespace-nowrap">Time Spent : {{ info.timespent }} ms</td>
               </tr>
               </tbody>
             </table>
+            <br/>
+            <br/>
             <div style='border-bottom: 2px solid #eaeaea'>
               <ul class='flex cursor-pointer'>
                 <li class='py-2 px-6 bg-white rounded-t-lg' v-bind:class="{'text-gray-500 bg-gray-200': openTab !== 1}">
@@ -61,17 +63,29 @@
                 <div class="tab-content tab-space text-white">
                   <div v-bind:class="{'hidden': openTab !== 1, 'block': openTab === 1}">
                     <p>
-                    <pre>{{ info.requestbody | pretty }}</pre>
+                         <vue-json-pretty
+                            :path="'res'"
+                            :data="info.requestbody | pretty"
+                            @click="handleClick">
+                          </vue-json-pretty>
                     </p>
                   </div>
                   <div v-bind:class="{'hidden': openTab !== 2, 'block': openTab === 2}">
-                    <p>
-                    <pre>{{ info.headers | pretty }}</pre>
-                    </p>
+                      <p>
+                          <vue-json-pretty
+                            :path="'res'"
+                            :data="info.headers | pretty"
+                            @click="handleClick">
+                          </vue-json-pretty>
+                      </p>
                   </div>
                   <div v-bind:class="{'hidden': openTab !== 3, 'block': openTab === 3}">
                     <p>
-                    <pre>{{ info.responsebody | pretty }}</pre>
+                        <vue-json-pretty
+                          :path="'res'"
+                          :data="info.responsebody | pretty"
+                          @click="handleClick">
+                        </vue-json-pretty>
                     </p>
                   </div>
                 </div>
@@ -117,12 +131,15 @@ module.exports = {
   },
   filters: {
     pretty: function (value) {
-      return JSON.stringify(JSON.parse(value), null, 2);
+      return JSON.parse(value)
     }
   },
   methods: {
     close() {
       this.$emit('close');
+    },
+    handleClick: function() {
+       console.log("clicked!")
     },
     toggleTabs: function (tabNumber) {
       this.openTab = tabNumber

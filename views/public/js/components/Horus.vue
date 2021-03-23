@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
-      <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
+      <div class="inline-block min-w-full overflow-hidden">
         Live Monitoring :
         <button v-if="status === 'connected'"
                 class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
@@ -11,6 +11,9 @@
                 class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
           Disconnected
         </button>
+        <br/><br/>
+      </div>
+      <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
         <table class="min-w-full leading-normal">
           <thead>
           <tr>
@@ -74,7 +77,7 @@
               {{ log.CreatedAt }}
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <a v-on:click="toggleModal(log.ID)"> 👁️ </a>
+              <a class="pointer" v-on:click="toggleModal(log.ID)"> 👁️ </a>
             </td>
           </tr>
           </tbody>
@@ -181,5 +184,8 @@ module.exports = {
 body.modal-active {
   overflow-x: hidden;
   overflow-y: visible !important;
+}
+.pointer {
+    cursor: pointer
 }
 </style>
