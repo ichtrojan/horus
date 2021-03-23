@@ -227,6 +227,7 @@ func (config Config) Serve(port string, key string) error {
 }
 
 func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
+
 	creds := Credentials{
 		Key: r.FormValue("key"),
 	}
@@ -234,14 +235,19 @@ func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
 	if creds.Key == config.key {
 		setSession(w, "god")
 
-		http.Redirect(w, r, "horus", 302)
+		response := map[string]bool{"status": true}
+
+		_ = json.NewEncoder(w).Encode(response)
 
 		return
 	}
 
-	w.WriteHeader(http.StatusUnauthorized)
+	response := map[string]bool{"status": false}
 
-	_ = tmpl.Execute(w, Response{Message: "invalid key"})
+	_ = json.NewEncoder(w).Encode(response)
+
+	return
+
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -274,9 +280,6 @@ func getSession(w http.ResponseWriter, r *http.Request) (who string) {
 			return who
 		}
 	}
-
-	http.Redirect(w, r, "login", 302)
-
 	return
 }
 
@@ -301,6 +304,13 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 
 	var req []models.Request
 
+	session := getSession(w, r)
+
+	if session == ""{
+		_ = json.NewEncoder(w).Encode(&req)
+		return
+	}
+
 	request, err := connect(config)
 
 	if err != nil {
@@ -319,12 +329,23 @@ func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderView(w http.ResponseWriter, r *http.Request) {
-	_ = getSession(w, r)
 
 	http.ServeFile(w, r, "../views/index.html")
 }
 
 func (config Config) serveWs(w http.ResponseWriter, r *http.Request) {
+
+	session := getSession(w, r)
+
+	if session == ""{
+
+		response := map[string]string{"status": "Invalid session"}
+
+		_ = json.NewEncoder(w).Encode(response)
+
+		return
+	}
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {

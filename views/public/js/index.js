@@ -1,3 +1,4 @@
+Vue.$cookies.config('7d')
 new Vue({
     el: '#app',
     components: {
@@ -7,7 +8,37 @@ new Vue({
         // 'footer': httpVueLoader('/components/footer.vue')
     },
     data: {
-        message: 'Hello Vue'
+        loggedIn : false,
+        key : "",
+        error: false
     },
-    methods: {},
+    methods: {
+        login(key){
+            let formData = new FormData();
+            formData.append('key', this.key);
+            const request = {
+                method: "POST",
+                body: formData
+            };
+            fetch("./login", request)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status){
+                        this.$cookies.set(this.$cookies.get('horus'))
+                        this.loggedIn = true
+                    }else{
+                        this.error = true
+                    }
+                });
+        },
+        logout(){
+            this.$cookies.remove('horus')
+            this.loggedIn = false
+        }
+    },
+    created(){
+        if(this.$cookies.get('horus') != null){
+            this.loggedIn = true
+        }
+    }
 })
