@@ -188,6 +188,13 @@ func (config Config) Serve(port string, key string) error {
 
 	horusServer.HandleFunc("/ws", config.serveWs)
 
+	horusServer.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			config.postlogin(w, r)
+		}
+	})
+
 	horusServer.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		cookie := &http.Cookie{
 			Name:   "horus",
