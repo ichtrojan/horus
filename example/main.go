@@ -18,13 +18,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err = listener.Serve(":8081","12345"); err != nil{
+	if err = listener.Serve(":8081", "12345"); err != nil {
 		log.Fatal(err)
 	}
 
-
 	http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		if r.URL.Path != "/" {
+			w.WriteHeader(http.StatusNotFound)
+
+			response := map[string]string{"message": "endpont not found"}
+
+			_ = json.NewEncoder(w).Encode(response)
+
+			return
+		}
 
 		_ = json.NewEncoder(w).Encode(response{Message: "Horus is live 👁"})
 	}))
