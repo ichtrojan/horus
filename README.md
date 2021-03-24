@@ -67,8 +67,6 @@ http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request)
 ...
 ```
 
-You can explore the implementation in the [example folder](https://github.com/ichtrojan/horus/tree/main/example).
-
 ## Built by 
 
 * Toni Akinmolayan - [twitter](https://twitter.com/toniastro_) [GitHub](https://github.com/toniastro)
