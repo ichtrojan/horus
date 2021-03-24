@@ -1,8 +1,12 @@
 # Horus 𓂀
 
+<img width="1461" alt="horus-hero" src="https://user-images.githubusercontent.com/5338836/112303700-e2a23480-8c9c-11eb-9e47-9b0634e5b1e5.png">
+
 ## Introduction
 
 Horus is a request logger and viewer for [Go](https://golang.org). It allows developers log and view http requests made to their web application.
+
+<img width="1461" alt="horus-big-brother" src="https://user-images.githubusercontent.com/5338836/112304004-44629e80-8c9d-11eb-930b-bdf32448673c.png">
 
 ## Installation 
 
@@ -34,6 +38,8 @@ func main() {
 > Supported database adapters include **mysql** and **postgres**
 
 ### Serve dashboard (optional)
+
+<img width="1461" alt="horus-message-received" src="https://user-images.githubusercontent.com/5338836/112304136-69571180-8c9d-11eb-80db-167c6e8c4d3c.png">
 
 ```go
 ...
