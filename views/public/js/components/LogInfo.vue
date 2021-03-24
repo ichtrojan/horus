@@ -130,7 +130,7 @@ module.exports = {
     }
   },
   filters: {
-    pretty: (value) => {
+    pretty: function (value) {
       return JSON.parse(value)
     }
   },
@@ -138,10 +138,10 @@ module.exports = {
     close() {
       this.$emit('close');
     },
-    handleClick: () => {
+    handleClick: function() {
        console.log("clicked!")
     },
-    toggleTabs: (tabNumber) => {
+    toggleTabs: function (tabNumber) {
       this.openTab = tabNumber
     }
   }
