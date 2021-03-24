@@ -23,7 +23,6 @@ new Vue({
         .then((response) => response.json())
         .then((data) => {
           if (data.status) {
-            // this.$cookies.set(this.$cookies.get("horus"));
             this.loggedIn = true;
             this.cookie = "1";
           } else {
@@ -40,6 +39,7 @@ new Vue({
           if (data.status) {
             this.loggedIn = false;
           } else {
+            this.loggedIn = false;
           }
         });
       location.reload();

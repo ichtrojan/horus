@@ -137,7 +137,7 @@ module.exports = {
     logged: {
       handler: (newVal) => {
         if (newVal === "0") {
-          if (connection != null) {
+          if (this.connection != null) {
             this.connection.close();
           }
         }
