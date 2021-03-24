@@ -11,17 +11,15 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"time"
 )
 
-type Config struct {
+type InternalConfig struct {
 	Database string
 	Dsn      string
 	key      string
@@ -55,58 +53,42 @@ type Credentials struct {
 	Key string
 }
 
-func Init(database string) (Config, error) {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("No .env file found")
-	}
+type Config struct {
+	DbUser    string
+	DbPssword string
+	DbHost    string
+	DbName    string
+	DbPort    string
+}
 
-	user, exist := os.LookupEnv("HORUS_DB_USER")
+func Init(database string, config Config) (InternalConfig, error) {
+	user := config.DbUser
 
-	if !exist {
-		log.Fatal("HORUS_DB_USER not set in .env")
-	}
+	pass := config.DbPssword
 
-	pass, exist := os.LookupEnv("HORUS_DB_PASS")
+	host := config.DbHost
 
-	if !exist {
-		log.Fatal("HORUS_DB_PASS not set in .env")
-	}
+	name := config.DbName
 
-	host, exist := os.LookupEnv("HORUS_DB_HOST")
-
-	if !exist {
-		log.Fatal("HORUS_DB_HOST not set in .env")
-	}
-
-	name, exist := os.LookupEnv("HORUS_DB_NAME")
-
-	if !exist {
-		log.Fatal("HORUS_DB_NAME not set in .env")
-	}
-
-	port, exist := os.LookupEnv("HORUS_DB_PORT")
-
-	if !exist {
-		log.Fatal("HORUS_DB_PORT not set in .env")
-	}
+	port := config.DbPort
 
 	switch database {
 	case "mysql":
-		return Config{
+		return InternalConfig{
 			Database: "mysql",
 			Dsn:      fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name),
 		}, nil
 	case "postgres":
-		return Config{
+		return InternalConfig{
 			Database: "mysql",
 			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
 		}, nil
 	default:
-		return Config{}, errors.New("database not defined")
+		return InternalConfig{}, errors.New("database not defined")
 	}
 }
 
-func (config Config) Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
+func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		database, err := connect(config)
 
@@ -173,7 +155,7 @@ func minifyJson(originalJson []byte) []byte {
 	return []byte(buffer.String())
 }
 
-func (config Config) Serve(port string, key string) error {
+func (config InternalConfig) Serve(port string, key string) error {
 	config.key = key
 
 	horusServer := http.NewServeMux()
@@ -221,7 +203,7 @@ func (config Config) Serve(port string, key string) error {
 	return nil
 }
 
-func (config Config) postlogin(w http.ResponseWriter, r *http.Request) {
+func (config InternalConfig) postlogin(w http.ResponseWriter, r *http.Request) {
 	creds := Credentials{
 		Key: r.FormValue("key"),
 	}
@@ -273,7 +255,7 @@ func getSession(w http.ResponseWriter, r *http.Request) (who string) {
 	return
 }
 
-func connect(config Config) (*gorm.DB, error) {
+func connect(config InternalConfig) (*gorm.DB, error) {
 	db, err := gorm.Open(config.Database, config.Dsn)
 
 	if err != nil {
@@ -287,7 +269,7 @@ func connect(config Config) (*gorm.DB, error) {
 	return db, nil
 }
 
-func (config Config) showLogs(w http.ResponseWriter, r *http.Request) {
+func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	lastID := r.URL.Query().Get("lastID")
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -323,7 +305,7 @@ func renderView(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "../views/index.html")
 }
 
-func (config Config) serveWs(w http.ResponseWriter, r *http.Request) {
+func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
 
 	session := getSession(w, r)
 
