@@ -57,8 +57,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = listener.Serve(":8081", "12345"); err != nil {
-		log.Fatal(err)
+	if err := http.ListenAndServe(":8081", listener.Serve("12345")); err != nil {
+		fmt.Print(err)
 	}
 
 	http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request) {

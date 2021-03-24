@@ -43,11 +43,14 @@ func main() {
 
 ```go
 ...
-if err = listener.Serve(":{preferred_port}", "{preferred_password}"); err != nil {
+if err := http.ListenAndServe(":8081", listener.Serve("{preferred_password}")); err != nil {
 	log.Fatal(err)
 }
 ...
 ```
+
+>**NOTE**<br/>
+> Visit `/horus` on the port configured to view the dashboard
 
 ### Usage
 To enable horus to listen for requests, use the `Watch` middleware provided by horus on the endpoints you will like monitor.
