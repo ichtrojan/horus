@@ -96,10 +96,8 @@
             </tr>
           </tbody>
         </table>
-        <br />
-        <br />
-        <br />
       </div>
+        <br/> <br/>
     </div>
     <div v-if="showLog">
       <log-info
