@@ -40,7 +40,7 @@
             <th
                 class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
             >
-              Created At
+              Happened
             </th>
             <th
                 class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
@@ -116,13 +116,13 @@ module.exports = {
   },
   props: ["logged"],
   watch: {
-      logged:{
-            handler: function (newVal, oldVal) {
-                if (newVal == "0"){
-                     this.connection.close()
-                }
-            }
+    logged: {
+      handler: (newVal, oldVal) => {
+        if (newVal === "0") {
+          this.connection.close()
+        }
       }
+    }
   },
   methods: {
     initiate() {
@@ -185,7 +185,8 @@ body.modal-active {
   overflow-x: hidden;
   overflow-y: visible !important;
 }
+
 .pointer {
-    cursor: pointer
+  cursor: pointer
 }
 </style>
