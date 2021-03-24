@@ -41,6 +41,9 @@
               <tr>
                 <td class="px-6 py-1 whitespace-nowrap">Time Spent : {{ info.timespent }} ms</td>
               </tr>
+               <tr>
+                <td class="px-6 py-1 whitespace-nowrap">Origin IP : {{ info.ipaddress }} </td>
+              </tr>
               </tbody>
             </table>
             <br/>
@@ -127,7 +130,11 @@ module.exports = {
   },
   filters: {
     pretty: function (value) {
-      return JSON.parse(value)
+      try {
+          return JSON.parse(value);
+        } catch(e) {
+          return value
+      }
     }
   },
   methods: {
