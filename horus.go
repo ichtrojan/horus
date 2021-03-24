@@ -105,7 +105,11 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 			log.Fatal(err)
 		}
 
-		ipAddress, _, _ := net.SplitHostPort(request.RemoteAddr)
+		ipAddress, err := getIp()
+
+		if err != nil {
+			ipAddress, _, _ = net.SplitHostPort(request.RemoteAddr)
+		}
 
 		headers, err := json.Marshal(request.Header)
 
@@ -421,4 +425,18 @@ func writer(ws *websocket.Conn) {
 			}
 		}
 	}
+}
+
+func getIp() (string, error) {
+	resp, err := http.Get("https://api.ipify.org?format=text")
+
+	if err != nil {
+		return "", errors.New("unable to get ip")
+	}
+
+	defer resp.Body.Close()
+
+	ip, _ := ioutil.ReadAll(resp.Body)
+
+	return string(ip), nil
 }
