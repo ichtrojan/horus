@@ -18,6 +18,7 @@ import (
 	"net/http/httptest"
 	"path"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -102,25 +103,19 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 		database, err := connect(config)
 
 		if err != nil {
-			log.Fatal(err)
-		}
-
-		ipAddress, err := getIp()
-
-		if err != nil {
-			ipAddress, _, _ = net.SplitHostPort(request.RemoteAddr)
+			fmt.Println(err)
 		}
 
 		headers, err := json.Marshal(request.Header)
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
 		requestBody, err := ioutil.ReadAll(request.Body)
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
 		recorder := httptest.NewRecorder()
@@ -137,15 +132,16 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 			Headers:       string(minifyJson(headers)),
 			Method:        request.Method,
 			Host:          request.Host,
-			Ipadress:      ipAddress,
+			Ipadress:      getIp(request),
 			TimeSpent:     float64(time.Since(startTime)) / float64(time.Millisecond),
 		}
 
 		write := database.Create(&req)
 
 		if write.RowsAffected != 1 {
-			log.Fatal("unable to log request")
+			fmt.Println("unable to log request")
 		}
+
 		go func() {
 			requestQueue <- req
 		}()
@@ -427,16 +423,34 @@ func writer(ws *websocket.Conn) {
 	}
 }
 
-func getIp() (string, error) {
-	resp, err := http.Get("https://api.ipify.org?format=text")
+func getIp(request *http.Request) string {
+	var xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
+	var xRealIP = http.CanonicalHeaderKey("X-Real-IP")
 
-	if err != nil {
-		return "", errors.New("unable to get ip")
+	var ip string
+
+	if xff := request.Header.Get(xForwardedFor); xff != "" {
+		i := strings.Index(xff, ", ")
+
+		if i == -1 {
+			i = len(xff)
+		}
+
+		ip = xff[:i]
+
+	} else if xrip := request.Header.Get(xRealIP); xrip != "" {
+		ip = xrip
 	}
 
-	defer resp.Body.Close()
+	if ip == "" {
+		ipAddress, _, err := net.SplitHostPort(request.RemoteAddr)
 
-	ip, _ := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return ""
+		}
 
-	return string(ip), nil
+		return strings.TrimSpace(ipAddress)
+	}
+
+	return ip
 }
