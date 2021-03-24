@@ -1,68 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <!-- Meta Information -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
     <script src="https://unpkg.com/vue"></script>
-    <title>Horus Logger | Dashboard </title>
+    <title>Horus Logger | Dashboard</title>
 
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="noindex, nofollow" />
 
     <!-- Style sheets-->
-    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@1.0.4/dist/tailwind.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/vue-json-pretty@1.7.0/lib/styles.css"/>
-</head>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tailwindcss@1.0.4/dist/tailwind.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/vue-json-pretty@1.7.0/lib/styles.css"
+    />
+  </head>
 
-<body class="bg-gray-200">
-
-<div class="bg-gray-800 text-white py-3 px-4 text-center fixed left-0 bottom-0 right-0 z-40">
-    Horus 👁️
-    <a class="underline text-gray-200" href="https://github.com/ichtrojan/horus">Repository</a>
-</div>
-
-<body class="antialiased font-sans bg-gray-200">
-    <div class="container mx-auto px-4 sm:px-8">
-        <div id="app">
-            <div class="py-8">
-                <div>
-                    <h2 class="text-2xl font-semibold leading-tight">Horus 𓂀</h2>
-                </div>
-                <div v-if="loggedIn" class="float-right">
-                    <a aria-hidden
-                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" v-on:click="logout()">Logout</a>
-                </div>
-            </div>
-            <div v-if="loggedIn">
-                <sort-bar></sort-bar>
-                <horus :logged="this.cookie"></horus>
-            </div>
-            <div v-else>
-                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
-                    <div class="md:w-full px-3">
-                        <div class="md:w-1/2 px-3 mb-6 md:mb-0">
-                            <p class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert" v-if="error">Wrong Credentials passed <br/></p><br/>
-                            <label class="block uppercase tracking-wide text-grey-darker text-xs font-bold mb-2" for="grid-first-name">
-                                Horus Key
-                            </label>
-                            <input v-model="key" class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3" id="grid-first-name" type="password" placeholder="******">
-                            <p class="text-red text-xs italic">Please enter key to access logs.</p>
-
-                            <button v-on:click="login" class="bg-red-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Login 𓂀</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+  <body class="bg-gray-200">
+    <div
+      class="bg-gray-800 text-white py-3 px-4 text-center fixed left-0 bottom-0 right-0 z-40"
+    >
+      Horus 👁️
+      <a
+        class="underline text-gray-200"
+        href="https://github.com/ichtrojan/horus"
+        >Repository</a
+      >
     </div>
-</body>
 
-<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
-<script src="https://unpkg.com/http-vue-loader"></script>
-<script src="https://unpkg.com/vue-cookies@1.7.4/vue-cookies.js"></script>
-<script src="https://unpkg.com/vue-json-pretty@1.7.0/lib/vue-json-pretty.js"></script>
-<script src="public/js/index.js"></script>
+    <body class="antialiased font-sans bg-gray-200">
+      <div class="container mx-auto px-4 sm:px-8">
+        <div id="app">
+          <div class="py-8">
+            <div>
+              <h2 class="text-2xl font-semibold leading-tight">Horus 𓂀</h2>
+            </div>
+            <div v-if="loggedIn" class="float-right">
+              <a
+                aria-hidden
+                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                v-on:click="logout()"
+                >Logout</a
+              >
+            </div>
+          </div>
+          <div v-if="loggedIn">
+            <horus :logged="this.cookie"></horus>
+          </div>
+          <div v-else>
+            <div
+              class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2"
+            >
+              <div class="md:w-full px-3">
+                <div class="md:w-1/2 px-3 mb-6 md:mb-0">
+                  <form @submit.prevent="login">
+                    <p
+                      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+                      role="alert"
+                      v-if="error"
+                    >
+                      Wrong Credentials passed <br />
+                    </p>
+                    <br />
+                    <label
+                      class="block uppercase tracking-wide text-grey-darker text-xs font-bold mb-2"
+                      for="grid-first-name"
+                    >
+                      Horus Key
+                    </label>
+                    <input
+                      v-model="key"
+                      class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3"
+                      id="grid-first-name"
+                      type="password"
+                      placeholder="******"
+                    />
+                    <p class="text-red text-xs italic">
+                      Please enter key to access logs.
+                    </p>
 
-</body>
+                    <button
+                      v-on:click="login"
+                      class="bg-red-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Login 𓂀
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+    <script src="https://unpkg.com/http-vue-loader"></script>
+    <script src="https://unpkg.com/vue-cookies@1.7.4/vue-cookies.js"></script>
+    <script src="https://unpkg.com/vue-json-pretty@1.7.0/lib/vue-json-pretty.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+      integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+      crossorigin="anonymous"
+    ></script>
+    <script src="public/js/index.js"></script>
+  </body>
 </html>
