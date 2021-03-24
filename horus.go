@@ -102,7 +102,7 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 		database, err := connect(config)
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
 		ipAddress, err := getIp()
@@ -114,13 +114,13 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 		headers, err := json.Marshal(request.Header)
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
 		requestBody, err := ioutil.ReadAll(request.Body)
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
 		recorder := httptest.NewRecorder()
@@ -144,8 +144,9 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 		write := database.Create(&req)
 
 		if write.RowsAffected != 1 {
-			log.Fatal("unable to log request")
+			fmt.Println("unable to log request")
 		}
+
 		go func() {
 			requestQueue <- req
 		}()
