@@ -19,6 +19,14 @@ import (
 	"time"
 )
 
+var METHODS = map[string]string{
+	"get": "GET",
+	"post": "POST",
+	"delete": "DELETE",
+	"option": "OPTION",
+	"put": "PUT",
+}
+
 type InternalConfig struct {
 	Database string
 	Dsn      string
@@ -266,13 +274,15 @@ func connect(config InternalConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	db.LogMode(true)
+
 	return db, nil
 }
 
 func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	lastID := r.URL.Query().Get("lastID")
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	method := r.URL.Query().Get("method")
+	method  = METHODS[method]
 
 	var req []models.Request
 
@@ -288,11 +298,16 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		_ = fmt.Errorf("%v", err)
 	}
+	fmt.Println(method)
+
+	if method == ""{
+		method = "%"
+	}
 
 	if lastID == "0" {
-		request.Limit(20).Order("id desc").Find(&req)
+		request.Limit(20).Order("id desc").Where("method LIKE ?", method).Find(&req)
 	} else {
-		request.Limit(20).Order("id desc").Where("id < ?", lastID).Find(&req)
+		request.Limit(20).Order("id desc").Where("id < ? AND method = ?", lastID, method).Find(&req)
 	}
 
 	_ = json.NewEncoder(w).Encode(&req)

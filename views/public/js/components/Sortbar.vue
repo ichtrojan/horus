@@ -17,10 +17,14 @@
         </div>
       </div>
       <div class="relative">
-        <select
-            class="appearance-none h-full rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500">
-          <option>GET</option>
-          <option>POST</option>
+        <select 
+            @change="methodSelect($event)" class="appearance-none h-full rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500">
+          <option value="">ALL</option>
+          <option value="get">GET</option>
+          <option value="post">POST</option>
+          <option value="delete">DELETE</option>
+          <option value="option">OPTION</option>
+          <option value="put">PUT</option>
         </select>
         <div
             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -43,3 +47,13 @@
     </div>
   </div>
 </template>
+<script>
+module.exports = {
+    methods: {
+        methodSelect (event) {
+          this.$emit('method', event.target.value)
+        }
+
+    }
+}
+</script>

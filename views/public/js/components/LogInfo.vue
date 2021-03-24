@@ -4,11 +4,9 @@
         class="overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none justify-center items-center flex"
     >
       <div class="relative w-auto my-6 mx-auto max-w-6xl">
-        <!--content-->
         <div
             class="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none"
         >
-          <!--header-->
           <div
               class="flex items-start justify-between p-5 border-b border-solid border-gray-300 rounded-t"
           >
@@ -24,7 +22,6 @@
               </span>
             </button>
           </div>
-          <!--body-->
           <div class="relative p-6 flex-auto">
             <p class="my-4 text-gray-600 text-lg leading-relaxed">
             <table class="min-w-full divide-y divide-gray-200">
@@ -93,7 +90,6 @@
             </div>
             </p>
           </div>
-          <!--footer-->
           <div
               class="flex items-center justify-end p-3 border-t border-solid border-gray-300 rounded-b"
           >
@@ -153,6 +149,7 @@ module.exports = {
   background-color: black;
   padding: 30px;
   height: 300px;
+  width:500px;
   overflow: auto;
 }
 </style>
