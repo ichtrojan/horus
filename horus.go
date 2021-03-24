@@ -16,6 +16,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"path"
+	"runtime"
 	"time"
 )
 
@@ -165,9 +167,11 @@ func minifyJson(originalJson []byte) []byte {
 func (config InternalConfig) Serve(key string) *http.ServeMux {
 	config.key = key
 
+	_, filename, _, _ := runtime.Caller(0)
+
 	horusServer := http.NewServeMux()
 
-	fileServer := http.FileServer(http.Dir("./views/public/"))
+	fileServer := http.FileServer(http.Dir(path.Dir(filename) + "/views/public/"))
 
 	horusServer.Handle("/public/", http.StripPrefix("/public", fileServer))
 
@@ -302,8 +306,9 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderView(w http.ResponseWriter, r *http.Request) {
+	_, filename, _, _ := runtime.Caller(0)
 
-	http.ServeFile(w, r, "./views/index.html")
+	http.ServeFile(w, r, path.Dir(filename)+"/views/index.html")
 }
 
 func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
