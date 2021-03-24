@@ -37,7 +37,6 @@ const (
 	writeWait  = 10 * time.Second
 	pongWait   = 60 * time.Second
 	pingPeriod = (pongWait * 9) / 10
-	filePeriod = 1 * time.Second
 )
 
 var (
@@ -274,8 +273,6 @@ func connect(config InternalConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.LogMode(true)
-
 	return db, nil
 }
 
@@ -307,7 +304,7 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	if lastID == "0" {
 		request.Limit(20).Order("id desc").Where("method LIKE ?", method).Find(&req)
 	} else {
-		request.Limit(20).Order("id desc").Where("id < ? AND method = ?", lastID, method).Find(&req)
+		request.Limit(20).Order("id desc").Where("id < ? AND method LIKE ?", lastID, method).Find(&req)
 	}
 
 	_ = json.NewEncoder(w).Encode(&req)

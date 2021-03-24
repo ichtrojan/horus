@@ -3,12 +3,6 @@
   <div class="my-2 flex sm:flex-row flex-col">
     <div class="flex flex-row mb-1 sm:mb-0">
       <div class="relative">
-        <select
-            class="appearance-none h-full rounded-l border block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-          <option>Today</option>
-          <option>7 days ago</option>
-          <option>1 month ago</option>
-        </select>
         <div
             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
           <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

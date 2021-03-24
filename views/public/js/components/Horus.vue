@@ -96,10 +96,8 @@
             </tr>
           </tbody>
         </table>
-        <br />
-        <br />
-        <br />
       </div>
+        <br/> <br/>
     </div>
     <div v-if="showLog">
       <log-info
@@ -139,7 +137,7 @@ module.exports = {
     logged: {
       handler: (newVal) => {
         if (newVal === "0") {
-          if (connection != null) {
+          if (this.connection != null) {
             this.connection.close();
           }
         }
