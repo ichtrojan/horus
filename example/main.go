@@ -57,7 +57,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := http.ListenAndServe(":8081", listener.Serve("12345")); err != nil {
+	if err := listener.Serve(":8081", "12345"); err != nil {
 		log.Fatal(err)
 	}
 

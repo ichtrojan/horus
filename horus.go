@@ -164,7 +164,7 @@ func minifyJson(originalJson []byte) []byte {
 	return []byte(buffer.String())
 }
 
-func (config InternalConfig) Serve(key string) *http.ServeMux {
+func (config InternalConfig) Serve(port string, key string) error {
 	config.key = key
 
 	_, filename, _, _ := runtime.Caller(0)
@@ -201,7 +201,17 @@ func (config InternalConfig) Serve(key string) *http.ServeMux {
 		http.Redirect(w, r, "horus", 302)
 	})
 
-	return horusServer
+	var err error
+
+	go func() {
+		err = http.ListenAndServe(port, horusServer)
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (config InternalConfig) postlogin(w http.ResponseWriter, r *http.Request) {

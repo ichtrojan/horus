@@ -43,7 +43,7 @@ func main() {
 
 ```go
 ...
-if err := http.ListenAndServe(":8081", listener.Serve("{preferred_password}")); err != nil {
+if err := listener.Serve(":8081", "{preferred_password}")); err != nil {
 	log.Fatal(err)
 }
 ...
