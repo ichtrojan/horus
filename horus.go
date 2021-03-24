@@ -167,7 +167,7 @@ func (config InternalConfig) Serve(key string) *http.ServeMux {
 
 	horusServer := http.NewServeMux()
 
-	fileServer := http.FileServer(http.Dir("../views/public/"))
+	fileServer := http.FileServer(http.Dir("./views/public/"))
 
 	horusServer.Handle("/public/", http.StripPrefix("/public", fileServer))
 
@@ -303,7 +303,7 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 
 func renderView(w http.ResponseWriter, r *http.Request) {
 
-	http.ServeFile(w, r, "../views/index.html")
+	http.ServeFile(w, r, "./views/index.html")
 }
 
 func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
