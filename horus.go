@@ -20,11 +20,11 @@ import (
 )
 
 var METHODS = map[string]string{
-	"get": "GET",
-	"post": "POST",
+	"get":    "GET",
+	"post":   "POST",
 	"delete": "DELETE",
 	"option": "OPTION",
-	"put": "PUT",
+	"put":    "PUT",
 }
 
 type InternalConfig struct {
@@ -279,7 +279,7 @@ func connect(config InternalConfig) (*gorm.DB, error) {
 func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	lastID := r.URL.Query().Get("lastID")
 	method := r.URL.Query().Get("method")
-	method  = METHODS[method]
+	method = METHODS[method]
 
 	var req []models.Request
 
@@ -295,9 +295,8 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		_ = fmt.Errorf("%v", err)
 	}
-	fmt.Println(method)
 
-	if method == ""{
+	if method == "" {
 		method = "%"
 	}
 
