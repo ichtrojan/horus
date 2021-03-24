@@ -135,7 +135,6 @@ module.exports = {
       this.$emit('close');
     },
     handleClick: function() {
-       console.log("clicked!")
     },
     toggleTabs: function (tabNumber) {
       this.openTab = tabNumber

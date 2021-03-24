@@ -38,10 +38,8 @@ new Vue({
         .then((response) => response.json())
         .then((data) => {
           if (data.status) {
-            console.log("Logged out");
             this.loggedIn = false;
           } else {
-            console.log("Error");
           }
         });
       location.reload();
