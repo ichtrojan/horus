@@ -154,8 +154,14 @@ module.exports = {
       fetch("./logs?lastID=0")
         .then((response) => response.json())
         .then((data) => (this.logs = data));
+      let mode;
+      if (location.protocol != 'https:') {
+        mode = "ws"
+      }else{
+        mode = "wss"
+      }
 
-      this.connection = new WebSocket("ws://" + document.location.host + "/ws");
+      this.connection = new WebSocket(mode+"://" + document.location.host + "/ws");
 
       this.connection.onclose = () => {
         this.status = "disconnected";
