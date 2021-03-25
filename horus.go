@@ -142,9 +142,13 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 			fmt.Println("unable to log request")
 		}
 
+		request.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
+
 		go func() {
 			requestQueue <- req
 		}()
+
+		_ = database.DB().Close()
 
 		next(writer, request)
 	}
@@ -310,6 +314,8 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 		request.Limit(20).Order("id desc").Where("id < ? AND method LIKE ?", lastID, method).Find(&req)
 	}
 
+	_ = request.DB().Close()
+
 	_ = json.NewEncoder(w).Encode(&req)
 
 	return
@@ -322,11 +328,9 @@ func renderView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
-
 	session := getSession(w, r)
 
 	if session == "" {
-
 		response := map[string]string{"status": "Invalid session"}
 
 		_ = json.NewEncoder(w).Encode(response)
@@ -340,6 +344,7 @@ func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
 		if _, ok := err.(websocket.HandshakeError); !ok {
 			log.Println(err)
 		}
+
 		return
 	}
 
