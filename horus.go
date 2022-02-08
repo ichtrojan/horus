@@ -5,12 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/websocket"
-	"github.com/ichtrojan/horus/models"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"io/ioutil"
 	"log"
 	"net"
@@ -20,6 +14,13 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/websocket"
+	"github.com/ichtrojan/horus/models"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 var METHODS = map[string]string{
@@ -34,6 +35,7 @@ type InternalConfig struct {
 	Database string
 	Dsn      string
 	key      string
+	db       *gorm.DB
 }
 
 const (
@@ -71,7 +73,9 @@ type Config struct {
 	DbPort    string
 }
 
-func Init(database string, config Config) (InternalConfig, error) {
+func Init(database string, config Config) (*InternalConfig, error) {
+	var dsn string
+
 	user := config.DbUser
 
 	pass := config.DbPssword
@@ -84,28 +88,28 @@ func Init(database string, config Config) (InternalConfig, error) {
 
 	switch database {
 	case "mysql":
-		return InternalConfig{
-			Database: "mysql",
-			Dsn:      fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name),
-		}, nil
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name)
 	case "postgres":
-		return InternalConfig{
-			Database: "mysql",
-			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
-		}, nil
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port)
 	default:
-		return InternalConfig{}, errors.New("database not defined")
+		msg := fmt.Sprintf("Database %s is not supported by horus", database)
+		return nil, errors.New(msg)
 	}
+
+	db, err := connect(database, dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &InternalConfig{
+		Database: database,
+		Dsn:      dsn,
+		db:       db,
+	}, nil
 }
 
-func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
+func (config *InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		database, err := connect(config)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
 		headers, err := json.Marshal(request.Header)
 
 		if err != nil {
@@ -136,7 +140,7 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 			TimeSpent:     float64(time.Since(startTime)) / float64(time.Millisecond),
 		}
 
-		write := database.Create(&req)
+		write := config.db.Create(&req)
 
 		if write.RowsAffected != 1 {
 			fmt.Println("unable to log request")
@@ -147,8 +151,6 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 		go func() {
 			requestQueue <- req
 		}()
-
-		_ = database.DB().Close()
 
 		next(writer, request)
 	}
@@ -168,7 +170,7 @@ func minifyJson(originalJson []byte) []byte {
 	return []byte(buffer.String())
 }
 
-func (config InternalConfig) Serve(port string, key string) error {
+func (config *InternalConfig) Serve(port string, key string) error {
 	config.key = key
 
 	_, filename, _, _ := runtime.Caller(0)
@@ -218,7 +220,7 @@ func (config InternalConfig) Serve(port string, key string) error {
 	return nil
 }
 
-func (config InternalConfig) postlogin(w http.ResponseWriter, r *http.Request) {
+func (config *InternalConfig) postlogin(w http.ResponseWriter, r *http.Request) {
 	creds := Credentials{
 		Key: r.FormValue("key"),
 	}
@@ -270,8 +272,8 @@ func getSession(w http.ResponseWriter, r *http.Request) (who string) {
 	return
 }
 
-func connect(config InternalConfig) (*gorm.DB, error) {
-	db, err := gorm.Open(config.Database, config.Dsn)
+func connect(database string, dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(database, dsn)
 
 	if err != nil {
 		return nil, err
@@ -284,7 +286,7 @@ func connect(config InternalConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
-func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
+func (config *InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 	lastID := r.URL.Query().Get("lastID")
 	method := r.URL.Query().Get("method")
 	method = METHODS[method]
@@ -298,23 +300,15 @@ func (config InternalConfig) showLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	request, err := connect(config)
-
-	if err != nil {
-		_ = fmt.Errorf("%v", err)
-	}
-
 	if method == "" {
 		method = "%"
 	}
 
 	if lastID == "0" {
-		request.Limit(20).Order("id desc").Where("method LIKE ?", method).Find(&req)
+		config.db.Limit(20).Order("id desc").Where("method LIKE ?", method).Find(&req)
 	} else {
-		request.Limit(20).Order("id desc").Where("id < ? AND method LIKE ?", lastID, method).Find(&req)
+		config.db.Limit(20).Order("id desc").Where("id < ? AND method LIKE ?", lastID, method).Find(&req)
 	}
-
-	_ = request.DB().Close()
 
 	_ = json.NewEncoder(w).Encode(&req)
 
@@ -327,7 +321,7 @@ func renderView(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path.Dir(filename)+"/views/index.html")
 }
 
-func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
+func (config *InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
 	session := getSession(w, r)
 
 	if session == "" {
@@ -351,6 +345,10 @@ func (config InternalConfig) serveWs(w http.ResponseWriter, r *http.Request) {
 	go writer(ws)
 
 	reader(ws)
+}
+
+func (config *InternalConfig) Close() error {
+	return config.db.DB().Close()
 }
 
 func reader(ws *websocket.Conn) {

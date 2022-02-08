@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ichtrojan/horus"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
+
+	"github.com/ichtrojan/horus"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -117,7 +121,33 @@ func main() {
 		_ = json.NewEncoder(w).Encode(response)
 	}))
 
-	if err := http.ListenAndServe(":8888", nil); err != nil {
-		fmt.Print(err)
+	s := &http.Server{
+		Handler: http.DefaultServeMux,
+		Addr:    ":8888",
+	}
+
+	go func() {
+		if err := s.ListenAndServe(); err != nil {
+			fmt.Print(err)
+		}
+	}()
+
+	sigChan := make(chan os.Signal)
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Second)
+	defer cancel()
+
+	signal.Notify(sigChan, os.Kill)
+	signal.Notify(sigChan, os.Interrupt)
+
+	signal := <-sigChan
+
+	log.Printf("Received %s signal, gracefully shutting down", signal)
+	// depending on your implementation
+	// defer listener.Close() or close when shutting down your server
+	if err := listener.Close(); err != nil {
+		log.Fatalf("FATAL: Error while shutting down horus: %s", err)
+	}
+	if err := s.Shutdown(ctx); err != nil {
+		log.Fatalf("FATAL: Error while shutting down server: %s", err)
 	}
 }
