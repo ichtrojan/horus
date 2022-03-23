@@ -67,12 +67,28 @@ http.HandleFunc("/", listener.Watch(func(w http.ResponseWriter, r *http.Request)
 ...
 ```
 
+Remember to either `defer` or manually close the horos listener when you get a cancel signal on your server
+```go
+defer listener.Close()
+```
+
+or 
+
+```go
+signal.Notify(sigChan, os.Kill)
+signal.Notify(sigChan, os.Interrupt)
+
+signal := <-sigChan
+
+log.Printf("Received %s signal, gracefully shutting down", signal)
+if err := listener.Close(); err != nil {
+	log.Fatalf("FATAL: Error while shutting down horus: %s", err)
+}
+```
+
 You can explore the implementation in the [example folder](https://github.com/ichtrojan/horus/tree/main/example).
 
 ## Built by 
 
 * Toni Akinmolayan - [twitter](https://twitter.com/toniastro_) [GitHub](https://github.com/toniastro)
 * Michael Trojan Okoh - [twitter](https://twitter.com/ichtrojan) [GitHub](https://github.com/ichtrojan)
-
-
-
