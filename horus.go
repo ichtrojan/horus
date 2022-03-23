@@ -142,13 +142,13 @@ func (config InternalConfig) Watch(next func(http.ResponseWriter, *http.Request)
 			fmt.Println("unable to log request")
 		}
 
+		_ = database.DB().Close()
+
 		request.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
 
 		go func() {
 			requestQueue <- req
 		}()
-
-		_ = database.DB().Close()
 
 		next(writer, request)
 	}
