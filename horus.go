@@ -91,7 +91,7 @@ func Init(database string, config Config) (InternalConfig, error) {
 	case "postgres":
 		return InternalConfig{
 			Database: "postgres",
-			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
+			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, pass, name, port),
 		}, nil
 	default:
 		return InternalConfig{}, errors.New("database not defined")
