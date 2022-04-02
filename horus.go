@@ -90,7 +90,7 @@ func Init(database string, config Config) (InternalConfig, error) {
 		}, nil
 	case "postgres":
 		return InternalConfig{
-			Database: "mysql",
+			Database: "postgres",
 			Dsn:      fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, pass, name, port),
 		}, nil
 	default:
